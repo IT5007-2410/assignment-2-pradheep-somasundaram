@@ -101,3 +101,9 @@ th, td {
 p {
   text-align: center;
 }
+
+.success-message {
+  color: green;
+  font-weight: bold;
+  margin-top: 10px;
+}

@@ -5,29 +5,42 @@ function AddTraveller({ travellers, setTravellers }) {
   const [id, setId] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
+  // Handles the submission of the "Add Traveller" form
   const handleSubmit = (e) => {
     e.preventDefault();
     const bookingTime = new Date().toLocaleString();
+
+    // Check if the max number of seats is reached
     if (travellers.length >= 10) {
       alert('No more seats available.');
       return;
     }
+
+    // Validate if all fields are filled
     if (!id || !name || !phone) {
       alert('Please fill in all fields.');
       return;
     }
+
+    // Check for duplicate ID
     const isDuplicateId = travellers.some((traveller) => traveller.id === id);
     if (isDuplicateId) {
       alert('Traveller ID already exists. Please use a unique ID.');
       return;
     }
+
+    // Add the new traveller and update local storage
     const newTraveller = { id, name, phone, bookingTime };
     const updatedTravellers = [...travellers, newTraveller];
     setTravellers(updatedTravellers);
     localStorage.setItem('travellerData', JSON.stringify(updatedTravellers));
 
-    // Clear form fields
+    // Show success message and reset all fields
+    setSuccessMessage('Traveller added.');
+    setTimeout(() => setSuccessMessage(''), 3000);
+
     setId('');
     setName('');
     setPhone('');
@@ -36,7 +49,10 @@ function AddTraveller({ travellers, setTravellers }) {
   return (
     <div>
       <h2>Add New Traveller</h2>
+      {/* Display success message */}
+      {successMessage && <p className="success-message">{successMessage}</p>}
       <form onSubmit={handleSubmit}>
+        {/* Input fields for adding a traveller */}
         <input type="text" value={id} onChange={(e) => setId(e.target.value)} placeholder="ID" />
         <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
         <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" />
@@ -46,16 +62,32 @@ function AddTraveller({ travellers, setTravellers }) {
   );
 }
 
-function DisplayTraveller({ travellers, setTravellers }) {
+function DisplayTraveller({ travellers, setTravellers, setActiveView }) {
+  // success message when traveller is deleted
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Handle deletion of a traveller
   const handleDelete = (id) => {
+    // Remove the selected traveller from the list
     const updatedTravellers = travellers.filter((traveller) => traveller.id !== id);
     setTravellers(updatedTravellers);
     localStorage.setItem('travellerData', JSON.stringify(updatedTravellers));
+
+    // Show success message
+    setSuccessMessage('Traveller deleted.');
+    setTimeout(() => setSuccessMessage(''), 3000);
+
+    // Navigate to home if all travellers are deleted
+    if (updatedTravellers.length === 0) {
+      setActiveView('home');
+    }
   };
 
   return (
     <div>
       <h2>Traveller Details</h2>
+      {/* Display success message */}
+      {successMessage && <p className="success-message">{successMessage}</p>}
       <table>
         <thead>
           <tr>
@@ -67,6 +99,7 @@ function DisplayTraveller({ travellers, setTravellers }) {
           </tr>
         </thead>
         <tbody>
+          {/* Render traveller details */}
           {travellers.length > 0 ? (
             travellers.map((traveller) => (
               <tr key={traveller.id}>
@@ -91,34 +124,43 @@ function DisplayTraveller({ travellers, setTravellers }) {
 }
 
 function DeleteTraveller({ travellers, setTravellers, setActiveView }) {
+  // traveller deletion and success message
   const [deleteId, setDeleteId] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleDelete = (e) => {
     e.preventDefault();
     const index = travellers.findIndex((traveller) => traveller.id === deleteId);
+
+    // If traveller is not found
     if (index === -1) {
       alert('Traveller not found.');
       return;
     }
 
-    // Delete the traveller from the list
+    // Delete traveller and update the list
     const updatedTravellers = travellers.filter((traveller) => traveller.id !== deleteId);
     setTravellers(updatedTravellers);
     localStorage.setItem('travellerData', JSON.stringify(updatedTravellers));
 
-    // Check if the list is empty, and auto-navigate to "Home" if no travellers are left
+    setSuccessMessage('Traveller deleted.');
+    setTimeout(() => setSuccessMessage(''), 3000);
+
+    // Navigate to home if all travellers are deleted
     if (updatedTravellers.length === 0) {
       setActiveView('home');
     }
 
-    // Clear the delete ID field
     setDeleteId('');
   };
 
   return (
     <div>
       <h2>Delete Traveller</h2>
+      {/* Display success message */}
+      {successMessage && <p className="success-message">{successMessage}</p>}
       <form onSubmit={handleDelete}>
+        {/* Input field for entering the traveller ID to delete */}
         <input
           type="text"
           value={deleteId}
@@ -131,10 +173,12 @@ function DeleteTraveller({ travellers, setTravellers, setActiveView }) {
   );
 }
 
-// Component to visualize seat availability and display total empty seats
+// Component to display the seat availability
 function SeatAvailability({ travellers, totalSeats }) {
+  //seat availability
   const seatStatus = Array(totalSeats).fill(false);
 
+  // Set seats as reserved based on the number of travellers
   travellers.forEach((traveller, index) => {
     if (index < totalSeats) seatStatus[index] = true;
   });
@@ -142,6 +186,7 @@ function SeatAvailability({ travellers, totalSeats }) {
   return (
     <div>
       <h2>Seat Availability</h2>
+      {/* Display seat availability */}
       <div className="seat-container">
         {seatStatus.map((isOccupied, index) => (
           <div key={index} className={`seat ${isOccupied ? 'occupied' : 'unoccupied'}`}>
@@ -153,7 +198,7 @@ function SeatAvailability({ travellers, totalSeats }) {
   );
 }
 
-// Component to display free seats (used as a sub-component under all views)
+// to display the number of free seats
 function DisplayFreeSeats({ totalSeats, travellers }) {
   const availableSeats = totalSeats - travellers.length;
   return (
@@ -163,7 +208,7 @@ function DisplayFreeSeats({ totalSeats, travellers }) {
   );
 }
 
-// Updated NavBar with conditional "View Travellers" and "Delete Traveller" tabs
+// Navigation bar component for different views
 function NavBar({ setActiveView, travellers }) {
   return (
     <nav>
@@ -171,28 +216,28 @@ function NavBar({ setActiveView, travellers }) {
         <li onClick={() => setActiveView('home')}>Home</li>
         <li onClick={() => setActiveView('addTraveller')}>Add Traveller</li>
 
-        {/* Conditionally show "View Travellers" if travellers exist */}
+        {/* Show "View Travellers" and "Delete Traveller" only if there is atleast 1 travellers */}
         {travellers.length > 0 && (
-          <li onClick={() => setActiveView('viewTravellers')}>View Travellers</li>
-        )}
-
-        {/* Conditionally show "Delete Traveller" if travellers exist */}
-        {travellers.length > 0 && (
-          <li onClick={() => setActiveView('deleteTraveller')}>Delete Traveller</li>
+          <>
+            <li onClick={() => setActiveView('viewTravellers')}>View Travellers</li>
+            <li onClick={() => setActiveView('deleteTraveller')}>Delete Traveller</li>
+          </>
         )}
       </ul>
     </nav>
   );
 }
 
-function App() {
+function WebApp() {
   const [travellers, setTravellers] = useState(() => {
     const savedData = localStorage.getItem('travellerData');
     return savedData ? JSON.parse(savedData) : [];
   });
-  const [activeView, setActiveView] = useState('home'); // Track the active view
+  // Default view to Home page
+  const [activeView, setActiveView] = useState('home'); 
   const totalSeats = 10;
 
+  // Update local storage when the travellers list change
   useEffect(() => {
     localStorage.setItem('travellerData', JSON.stringify(travellers));
   }, [travellers]);
@@ -202,15 +247,10 @@ function App() {
       <h1>Railway Traveller Reservation System</h1>
 
       {/* Navigation Bar */}
-      <NavBar
-        setActiveView={setActiveView}
-        travellers={travellers}
-      />
+      <NavBar setActiveView={setActiveView} travellers={travellers} />
 
-      {/* Display Free Seats (Always displayed as a sub-component) */}
       <DisplayFreeSeats totalSeats={totalSeats} travellers={travellers} />
 
-      {/* Conditionally render based on activeView */}
       {activeView === 'home' && <SeatAvailability travellers={travellers} totalSeats={totalSeats} />}
       {activeView === 'addTraveller' && (
         <AddTraveller
@@ -218,20 +258,25 @@ function App() {
           setTravellers={setTravellers}
         />
       )}
-      {activeView === 'viewTravellers' && <DisplayTraveller travellers={travellers} setTravellers={setTravellers} />}
+      {activeView === 'viewTravellers' && (
+        <DisplayTraveller
+          travellers={travellers}
+          setTravellers={setTravellers}
+          setActiveView={setActiveView}
+        />
+      )}
       {activeView === 'deleteTraveller' && (
         <DeleteTraveller
           travellers={travellers}
           setTravellers={setTravellers}
-          setActiveView={setActiveView} // Pass setActiveView to allow auto-navigation to Home
+          setActiveView={setActiveView}
         />
       )}
 
-      {/* Display status for seat limits */}
       {travellers.length >= 10 && <p>All seats are reserved. No more travellers can be added.</p>}
       {travellers.length === 0 && activeView === 'viewTravellers' && <p>No travellers to display.</p>}
     </div>
   );
 }
 
-export default App;
+export default WebApp;
